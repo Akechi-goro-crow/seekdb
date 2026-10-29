@@ -31,6 +31,34 @@ namespace oceanbase
 namespace sql
 {
 
+// Reusable per-document state used while building full-text auxiliary rows.
+// Keeping the word-map buckets and datum-row storage alive across documents
+// avoids repeated allocator work on the index-build hot path.
+struct ObFTWordRowsReuseCtx
+{
+  storage::ObFTWordMap word_map;
+  common::ObArenaAllocator row_alloc;
+  blocksstable::ObDatumRow *row_pool;
+  int64_t row_pool_cnt;
+
+  ObFTWordRowsReuseCtx()
+    : word_map(),
+      row_alloc("FTWordRowPool", OB_MALLOC_NORMAL_BLOCK_SIZE),
+      row_pool(nullptr),
+      row_pool_cnt(0)
+  {}
+
+  void reset()
+  {
+    row_pool = nullptr;
+    row_pool_cnt = 0;
+    row_alloc.reset();
+    if (word_map.created()) {
+      word_map.destroy();
+    }
+  }
+};
+
 
 class ObFTIndexRowCache final
 {
@@ -59,6 +87,7 @@ private:
   bool is_fts_index_aux_;
   storage::ObFTParseHelper helper_;
   bool is_inited_;
+  ObFTWordRowsReuseCtx reuse_ctx_;
 
   DISALLOW_COPY_AND_ASSIGN(ObFTIndexRowCache);
 };
@@ -186,7 +215,8 @@ public:
                                          const ObDatum &doc_id_datum,
                                          const ObString &fulltext,
                                          const bool is_fts_index_aux,
-                                         ObDomainIndexRow &word_rows);
+                                         ObDomainIndexRow &word_rows,
+                                         ObFTWordRowsReuseCtx *reuse_ctx = nullptr);
   static int generate_multivalue_index_rows(
       ObIAllocator &allocator,
       const ObDASDMLBaseCtDef &das_ctdef,
