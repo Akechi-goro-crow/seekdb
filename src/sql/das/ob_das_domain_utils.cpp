@@ -906,6 +906,7 @@ void ObFTDMLIterator::reset()
   is_inited_ = false;
   data_plane::reset_ft_doc_word_iterator(ft_doc_word_iter_);
   ft_parse_helper_.reset();
+  reuse_ctx_.reset();
   ObDomainDMLIterator::reset();
 }
 
@@ -1095,7 +1096,8 @@ int ObFTDMLIterator::generate_ft_word_rows(const ObChunkDatumStore::StoredRow *s
                                                                    doc_id_datum,
                                                                    ft,
                                                                    is_fts_index_aux,
-                                                                   rows_))) {
+                                                                   rows_,
+                                                                   &reuse_ctx_))) {
     if (OB_UNLIKELY(OB_ITER_END != ret)) {
     }
   }

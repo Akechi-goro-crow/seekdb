@@ -423,6 +423,7 @@ private:
   data_plane::ObFTDocWordIterator *ft_doc_word_iter_;
   common::ObArenaAllocator ft_doc_word_allocator_;
   storage::ObFTParseHelper ft_parse_helper_;
+  ObFTWordRowsReuseCtx reuse_ctx_;
   bool is_inited_;
 };
 
